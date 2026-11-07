@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tribunal de Leyes Absurdas | Data Science</title>
+    <style>
+        :root {
+            --bg: #090d16;
+            --card-bg: #111827;
+            --border: #1f293d;
+            --accent: #38bdf8;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 16px;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 420px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        }
+        h1 { color: var(--accent); font-size: 1.35rem; text-align: center; margin-top: 0; }
+        .subtitle { text-align: center; color: var(--muted); font-size: 0.85rem; margin-bottom: 20px; }
+        .progress-bar-container { width: 100%; height: 6px; background: var(--border); border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.4s ease; }
+        .question-card { background: #1a2333; border: 1px solid var(--border); padding: 16px; border-radius: 12px; font-weight: 500; font-size: 1.05rem; margin-bottom: 20px; line-height: 1.5; }
+        .btn { display: block; width: 100%; padding: 14px; margin-top: 12px; background: #1e293b; color: var(--text); border: 1px solid var(--border); border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; text-align: center; }
+        .btn-real { border-color: rgba(56, 189, 248, 0.4); }
+        .btn-fake { border-color: rgba(239, 68, 68, 0.4); }
+        .hidden { display: none; }
+        .feedback { margin-top: 16px; padding: 14px; border-radius: 12px; font-size: 0.9rem; background: #1a2333; border: 1px solid var(--border); line-height: 1.5; }
+        .stat-box { background: var(--bg); border: 1px dashed var(--border); padding: 10px; border-radius: 8px; margin-top: 12px; text-align: center; font-size: 0.85rem; color: var(--accent); font-weight: 600; }
+        .btn-next { background: var(--success); color: white; border: none; margin-top: 16px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="pantalla-inicio">
+            <h1>⚖️ Tribunal de Leyes Absurdas</h1>
+            <p class="subtitle">Análisis Estadístico de Sesgos Legales</p>
+            <p style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 25px;">Pon a prueba tu criterio frente a un dataset mixto de leyes reales y falsas.</p>
+            <button class="btn" style="background: var(--accent); color: #090d16;" onclick="comenzar()">Iniciar Simulación</button>
+        </div>
+
+        <div id="pantalla-juego" class="hidden">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); margin-bottom: 8px;">
+                <span id="contador-texto">Caso 1 de 5</span>
+                <span id="porcentaje-progreso">0%</span>
+            </div>
+            <div class="progress-bar-container"><div class="progress-bar-fill" id="barra-progreso"></div></div>
+            <div class="question-card" id="texto-pregunta"></div>
+            <div id="botones-opciones">
+                <button class="btn btn-real" onclick="responder(true)">🏛️ Es una Ley Real</button>
+                <button class="btn btn-fake" onclick="responder(false)">❌ Es un Invento (Falsa)</button>
+            </div>
+            <div id="caja-feedback" class="hidden feedback"></div>
+            <button id="btn-siguiente" class="btn btn-next hidden" onclick="siguientePregunta()">Siguiente Caso ➡️</button>
+        </div>
+
+        <div id="pantalla-final" class="hidden" style="text-align:center;">
+            <h1>📊 Informe de Clasificación</h1>
+            <p id="resultado-texto" style="margin: 20px 0; text-align: left; font-size: 0.95rem; line-height: 1.5;"></p>
+            <button class="btn" style="background: var(--accent); color: #090d16;" onclick="location.reload()">🔄 Reiniciar Análisis</button>
+        </div>
+    </div>
+
+    <script>
+        const preguntas = [
+            { texto: "En Milán (Italia), por ordenanza municipal es obligatorio sonreír en todo momento en la calle, salvo en funerales u hospitales.", real: true, explicacion: "¡Es real! Norma histórica que sigue en los registros legales.", stat: "📊 Solo el 22% acierta este caso." },
+            { texto: "En Florida (EE.UU.), está prohibido saltarse clases en la universidad si llevas un disfraz de payaso.", real: false, explicacion: "¡Falsa! Es un mito urbano de internet.", stat: "📊 El 81% cae en la trampa pensando que es real." },
+            { texto: "En Samoa, la ley estipula que es un delito penal formal olvidar el cumpleaños de tu esposa.", real: true, explicacion: "¡Es real! La primera vez el juez emite una advertencia formal.", stat: "📊 El 39% acierta este caso." },
+            { texto: "En Melbourne (Australia), está prohibido encender la aspiradora los domingos después del mediodía.", real: false, explicacion: "¡Falsa! Jamás existió esta prohibición específica.", stat: "📊 El 70% pensó que era real." },
+            { texto: "En Tailandia, es ilegal pisar un billete de moneda nacional porque la cara del rey está impresa en él.", real: true, explicacion: "¡Es real! Se castiga por el código de lesa majestad.", stat: "📊 Solo el 18% acierta." }
+        ];
+
+        let actual = 0, aciertos = 0;
+        function comenzar() {
+            document.getElementById('pantalla-inicio').classList.add('hidden');
+            document.getElementById('pantalla-juego').classList.remove('hidden');
+            mostrarPregunta();
+        }
+        function mostrarPregunta() {
+            document.getElementById('caja-feedback').classList.add('hidden');
+            document.getElementById('btn-siguiente').classList.add('hidden');
+            document.getElementById('botones-opciones').style.display = 'block';
+            if (actual < preguntas.length) {
+                let porcentaje = (actual / preguntas.length) * 100;
+                document.getElementById('contador-texto').innerText = `Caso ${actual + 1} de ${preguntas.length}`;
+                document.getElementById('porcentaje-progreso').innerText = `${Math.round(porcentaje)}%`;
+                document.getElementById('barra-progreso').style.width = `${porcentaje}%`;
+                document.getElementById('texto-pregunta').innerText = preguntas[actual].texto;
+            } else {
+                document.getElementById('barra-progreso').style.width = `100%`;
+                document.getElementById('porcentaje-progreso').innerText = `100%`;
+                mostrarResultado();
+            }
+        }
+        function responder(opcion) {
+            document.getElementById('botones-opciones').style.display = 'none';
+            const esAcertado = (opcion === preguntas[actual].real);
+            if (esAcertado) aciertos++;
+            const feedbackDiv = document.getElementById('caja-feedback');
+            feedbackDiv.innerHTML = `<b>${esAcertado ? '✅ ¡Exacto!' : '❌ ¡Caíste en la trampa!'}</b><br><br>${preguntas[actual].explicacion}<div class="stat-box">${preguntas[actual].stat}</div>`;
+            feedbackDiv.classList.remove('hidden');
+            document.getElementById('btn-siguiente').style.display = 'block';
+        }
+        function siguientePregunta() { actual++; mostrarPregunta(); }
+        function mostrarResultado() {
+            document.getElementById('pantalla-juego').classList.add('hidden');
+            document.getElementById('pantalla-final').classList.remove('hidden');
+            let veredicto = aciertos === 5 ? "🤖 <b>Auditor Legal de Élite.</b>" : aciertos >= 3 ? "⚖️ <b>Ciudadano Cauteloso.</b>" : "🤡 <b>Víctima del Algoritmo.</b>";
+            document.getElementById('resultado-texto').innerHTML = `Puntuación: <b>${aciertos} de ${preguntas.length}</b>.<br><br>${veredicto}`;
+        }
+    </script>
+</body>
+</html>
+
